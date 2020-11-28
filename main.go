@@ -1,35 +1,65 @@
 package main
 
+
 import "fmt"
 
-func Generate(ch chan<- int) {
+
+func Generate(out chan<- int) {
 	for i := 2; ; i++ {
-		ch <- i // Send 'i' to channel 'ch'.
+		out <- i                  
 	}
 }
 
 func Filter(in <-chan int, out chan<- int, prime int) {
+	m := prime * prime              
 	for {
-		i := <-in // Receive value from 'in'.
-		if i%prime != 0 {
-			out <- i // Send 'i' to 'out'.
+		i := <- in               
+		for i > m {
+			m = m + prime    
 		}
-
+		if i < m {
+			out <- i         
+		}
 	}
 }
 
-var nthPrime int = 1000000
+func Sieve(out chan<- int) {
+	gen := make(chan int)           
+	go Generate(gen)                
+	p := <- gen
+	out <- p
+	p = <- gen         
+	out <- p           
+
+	base_primes := make(chan int)     
+	go Sieve(base_primes)
+	bp := <- base_primes             
+	bq := bp * bp              
+
+	for  {
+		p = <- gen
+		if p == bq {                  
+			ft := make(chan int)
+			go Filter(gen, ft, bp) 
+			gen = ft
+			bp = <- base_primes     
+			bq = bp * bp            
+		} else {
+			out <- p
+		}
+	}
+}
 
 func main() {
+	sv := make(chan int)          
+	go Sieve(sv)                    
+	lim := 1000000
+	for i := 0; i < lim; i++ {
+		prime := <- sv
+		if i == (lim-1) {
+			fmt.Printf("The %dth prime number is: \t", lim)
+			fmt.Printf("%4d ", prime)
 
-	var prime int
-	ch := make(chan int)
-	go Generate(ch)
-	for i := 0; i <= nthPrime; i++ {
-		prime = <-ch
-		ch1 := make(chan int)
-		go Filter(ch, ch1, prime)
-		ch = ch1
+		}
 	}
-	fmt.Printf("Last element: %v\n", prime)
 }
