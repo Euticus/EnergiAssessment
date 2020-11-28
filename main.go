@@ -18,7 +18,7 @@ func Filter(in <-chan int, out chan<- int, prime int) {
 	}
 }
 
-var nthPrime int = 10000
+var nthPrime int = 1000000
 
 func main() {
 
